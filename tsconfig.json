@@ -18,8 +18,10 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
+      "*": ["node_modules/*"],
       "@app/common": ["libs/common/src"],
-      "@app/common/*": ["libs/common/src/*"]
+      "@app/common/*": ["libs/common/src/*"],
+      "@resevations": ["apps/resevations/src"]
     }
   }
 }

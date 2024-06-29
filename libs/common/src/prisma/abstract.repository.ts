@@ -1,12 +1,17 @@
 import { NotFoundException } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 
-export abstract class AbstractRepository<T extends { id: number | string }> {
-  protected abstract readonly prisma: PrismaService;
+export abstract class AbstractRepository<T extends { id: string }> {
+  protected readonly prisma: PrismaService;
   protected abstract get model(): any;
+  protected abstract get repositoryName(): string;
+
+  constructor(prisma: PrismaService) {
+    this.prisma = prisma;
+  }
 
   private throwNotFoundException(filterQuery: Partial<Record<keyof T, any>>): never {
-    const errorMessage = `Entity with filter ${JSON.stringify(filterQuery)} not found`;
+    const errorMessage = `${this.repositoryName}: Entity with filter ${JSON.stringify(filterQuery)} not found`;
 
     this.prisma.log('error', errorMessage);
     throw new NotFoundException(errorMessage);
@@ -15,14 +20,14 @@ export abstract class AbstractRepository<T extends { id: number | string }> {
   async create(data: Partial<T>): Promise<T> {
     const created = await this.model.create({ data });
 
-    this.prisma.log('info', 'Entity created', created);
+    this.prisma.log('info', `${this.repositoryName}: Entity created`, created);
     return created;
   }
 
   async findAll(): Promise<T[]> {
     const found = await this.model.findMany();
 
-    this.prisma.log('info', 'Entities found', found);
+    this.prisma.log('info', `${this.repositoryName}: Entities found`, found);
     return found;
   }
 
@@ -37,7 +42,7 @@ export abstract class AbstractRepository<T extends { id: number | string }> {
       take,
     });
 
-    this.prisma.log('info', 'Entities found', found);
+    this.prisma.log('info', `${this.repositoryName}: Entities found`, found);
     return found;
   }
 
@@ -73,7 +78,7 @@ export abstract class AbstractRepository<T extends { id: number | string }> {
       data,
     });
 
-    this.prisma.log('info', 'Entity updated', updated);
+    this.prisma.log('info', `${this.repositoryName}: Entity updated`, updated);
     return updated;
   }
 
@@ -86,7 +91,7 @@ export abstract class AbstractRepository<T extends { id: number | string }> {
 
     const deleted = await this.model.delete({ where: filterQuery });
 
-    this.prisma.log('info', 'Entity deleted', deleted);
+    this.prisma.log('info', `${this.repositoryName}: Entity deleted`, deleted);
   }
 
   async softRemove(filterQuery: Partial<Record<keyof T, any>>): Promise<void> {
@@ -101,7 +106,7 @@ export abstract class AbstractRepository<T extends { id: number | string }> {
       data: { deletedAt: new Date() },
     });
 
-    this.prisma.log('info', 'Entity soft deleted', deleted);
+    this.prisma.log('info', `${this.repositoryName}: Entity soft deleted`, deleted);
   }
 
   async restore(filterQuery: Partial<Record<keyof T, any>>): Promise<T> {
@@ -116,7 +121,7 @@ export abstract class AbstractRepository<T extends { id: number | string }> {
       data: { deletedAt: null },
     });
 
-    this.prisma.log('info', 'Entity restored', restored);
+    this.prisma.log('info', `${this.repositoryName}: Entity restored`, restored);
     return restored;
   }
 

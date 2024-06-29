@@ -7,6 +7,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Test {
+model Reservation {
   id        String   @id @default(cuid())
+  name      String
+  userId    String
+  placeId   String
+  invoiceId String
+  arrival   DateTime
+  departure DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

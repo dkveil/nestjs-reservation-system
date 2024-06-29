@@ -39,6 +39,7 @@ export class PrismaService
 
   log(eventType: Prisma.LogLevel, message: string, data?: any) {
     const formattedMessage = data ? `${message} ${JSON.stringify(data, null, 2)}` : message;
+
     switch (eventType) {
       case 'query':
         this.logger.log(formattedMessage);
