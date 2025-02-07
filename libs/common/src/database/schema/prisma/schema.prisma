@@ -7,6 +7,37 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Test {
-  id        String   @id @default(uuid())
+enum ReservationStatus {
+  PENDING    // Oczekująca
+  CONFIRMED  // Potwierdzona
+  CANCELED   // Anulowana
+  COMPLETED  // Zakończona
+  REJECTED   // Odrzucona
+}
+
+model Reservation {
+  id         String   @id @default(uuid())
+  status     ReservationStatus @default(PENDING)
+  userId     String
+  placeId    String
+  invoiceId  String?
+
+  startDate  DateTime
+  endDate    DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  canceledAt DateTime?
+
+  totalPrice  Decimal     @db.Decimal(10, 2)
+  currency    String      @default("PLN")
+  guestsCount Int         @default(1)
+
+  notes      String?
+  metadata   Json?
+
+  @@index([userId])
+  @@index([placeId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@unique([placeId, startDate])
 }
