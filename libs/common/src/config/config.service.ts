@@ -8,4 +8,12 @@ export class ConfigService {
 	get databaseUrl(): string {
 		return this.configService.get<string>('DATABASE_URL')!;
 	}
+
+	get redisConnectData() {
+		return {
+			host: this.configService.get<string>('REDIS_HOST')!,
+			port: this.configService.get<number>('REDIS_PORT')!,
+			password: this.configService.get<string>('REDIS_PASSWORD')!,
+		};
+	}
 }
