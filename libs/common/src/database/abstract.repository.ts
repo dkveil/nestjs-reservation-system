@@ -1,6 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
 import { DatabaseService } from './database.service';
-import { IRepository } from './interfaces';
+import { IRepository, FindManyOptions, FindOneOptions, CreateOptions, UpdateOptions } from './interfaces/';
 
 export abstract class AbstractRepository<T extends { id: string }> implements IRepository<T> {
 	protected readonly db: DatabaseService;
@@ -18,7 +18,8 @@ export abstract class AbstractRepository<T extends { id: string }> implements IR
 		throw new NotFoundException(errorMessage);
 	}
 
-	async create(data: Partial<T>, include?: any): Promise<T> {
+	async create(options: CreateOptions<T>): Promise<T> {
+		const { data, include } = options;
 		const created = await this.model.create({ data }, include);
 
 		this.db.log('info', `${this.repositoryName}: Entity created`, created);
@@ -32,12 +33,10 @@ export abstract class AbstractRepository<T extends { id: string }> implements IR
 		return found;
 	}
 
-	async findMany(
-		filterQuery: Partial<Record<keyof T, any>> = {},
-		paginationQuery: { skip?: number; take?: number } = {},
-		include?: any
-	): Promise<T[]> {
-		const { skip, take } = paginationQuery;
+	async findMany(options: FindManyOptions<T> = {}): Promise<T[]> {
+		const { filterQuery = {}, pagination = {}, include } = options;
+		const { skip, take } = pagination;
+
 		const found = await this.model.findMany({
 			where: filterQuery,
 			skip,
@@ -49,8 +48,13 @@ export abstract class AbstractRepository<T extends { id: string }> implements IR
 		return found;
 	}
 
-	async findOne(filterQuery: Partial<Record<keyof T, any>>, include?: any): Promise<T | null> {
-		const result = await this.model.findUnique({ where: filterQuery, include });
+	async findOne(options: FindOneOptions<T>): Promise<T | null> {
+		const { filterQuery, include } = options;
+
+		const result = await this.model.findUnique({
+			where: filterQuery,
+			include,
+		});
 
 		if (!result) {
 			this.throwNotFoundException(filterQuery);
@@ -59,17 +63,18 @@ export abstract class AbstractRepository<T extends { id: string }> implements IR
 		return result;
 	}
 
-	async findOneOrFail(filterQuery: Partial<Record<keyof T, any>>, include?: any): Promise<T> {
-		const result = await this.findOne(filterQuery, include);
+	async findOneOrFail(options: FindOneOptions<T>): Promise<T> {
+		const result = await this.findOne(options);
 
 		if (!result) {
-			this.throwNotFoundException(filterQuery);
+			this.throwNotFoundException(options.filterQuery);
 		}
 
 		return result;
 	}
 
-	async update(filterQuery: Partial<Record<keyof T, any>>, data: Partial<T>, include?: any): Promise<T> {
+	async update(options: UpdateOptions<T>): Promise<T> {
+		const { filterQuery, data, include } = options;
 		const result = await this.model.findUnique({ where: filterQuery });
 
 		if (!result) {

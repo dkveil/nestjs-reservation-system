@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseFilters } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseFilters } from '@nestjs/common';
 import { ReservationsService } from './reservations.service';
 import { CreateReservationDto, CreateReservationDtoSwagger } from './dto/create-reservation.dto';
 import { ZodPipe, ZodFilter } from '@app/common';

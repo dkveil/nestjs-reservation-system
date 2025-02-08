@@ -1,24 +1,42 @@
 import { DatabaseService } from '../database.service';
 
+export interface FindManyOptions<T> {
+	filterQuery?: Partial<Record<keyof T, any>>;
+	pagination?: {
+		skip?: number;
+		take?: number;
+	};
+	include?: any;
+}
+
+export interface FindOneOptions<T> {
+	filterQuery: Partial<Record<keyof T, any>>;
+	include?: any;
+}
+
+export interface CreateOptions<T> {
+	data: Partial<T>;
+	include?: any;
+}
+
+export interface UpdateOptions<T> {
+	filterQuery: Partial<Record<keyof T, any>>;
+	data: Partial<T>;
+	include?: any;
+}
+
 export interface IRepository<T extends { id: string }> {
-	create(data: Partial<T>, include?: any): Promise<T>;
+	create(options: CreateOptions<T>): Promise<T>;
 
 	findAll(include?: any): Promise<T[]>;
 
-	findMany(
-		filterQuery?: Partial<Record<keyof T, any>>,
-		paginationQuery?: {
-			skip?: number;
-			take?: number;
-		},
-		include?: any
-	): Promise<T[]>;
+	findMany(options?: FindManyOptions<T>): Promise<T[]>;
 
-	findOne(filterQuery: Partial<Record<keyof T, any>>, include?: any): Promise<T | null>;
+	findOne(options: FindOneOptions<T>): Promise<T | null>;
 
-	findOneOrFail(filterQuery: Partial<Record<keyof T, any>>, include?: any): Promise<T>;
+	findOneOrFail(options: FindOneOptions<T>): Promise<T>;
 
-	update(filterQuery: Partial<Record<keyof T, any>>, data: Partial<T>, include?: any): Promise<T>;
+	update(options: UpdateOptions<T>): Promise<T>;
 
 	remove(filterQuery: Partial<Record<keyof T, any>>): Promise<void>;
 
