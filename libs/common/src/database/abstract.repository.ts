@@ -1,6 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
 import { DatabaseService } from './database.service';
-import { IRepository, FindManyOptions, FindOneOptions, CreateOptions, UpdateOptions } from './interfaces/';
+import { IRepository, FindManyOptions, FindOneOptions, CreateOptions, UpdateOptions, FilterQuery } from './interfaces/';
 
 export abstract class AbstractRepository<T extends { id: string }> implements IRepository<T> {
 	protected readonly db: DatabaseService;
@@ -11,7 +11,7 @@ export abstract class AbstractRepository<T extends { id: string }> implements IR
 		this.db = db;
 	}
 
-	public throwNotFoundException(filterQuery: Partial<Record<keyof T, any>>): never {
+	public throwNotFoundException(filterQuery: FilterQuery<T>): never {
 		const errorMessage = `${this.repositoryName}: Entity with filter ${JSON.stringify(filterQuery)} not found`;
 
 		this.db.log('error', errorMessage);
@@ -91,7 +91,7 @@ export abstract class AbstractRepository<T extends { id: string }> implements IR
 		return updated;
 	}
 
-	async remove(filterQuery: Partial<Record<keyof T, any>>): Promise<void> {
+	async remove(filterQuery: FilterQuery<T>): Promise<void> {
 		const result = await this.model.findUnique({ where: filterQuery });
 
 		if (!result) {
@@ -103,7 +103,7 @@ export abstract class AbstractRepository<T extends { id: string }> implements IR
 		this.db.log('info', `${this.repositoryName}: Entity deleted`, deleted);
 	}
 
-	async softRemove(filterQuery: Partial<Record<keyof T, any>>): Promise<void> {
+	async softRemove(filterQuery: FilterQuery<T>): Promise<void> {
 		const result = await this.model.findUnique({ where: filterQuery });
 
 		if (!result) {
@@ -118,7 +118,7 @@ export abstract class AbstractRepository<T extends { id: string }> implements IR
 		this.db.log('info', `${this.repositoryName}: Entity soft deleted`, deleted);
 	}
 
-	async restore(filterQuery: Partial<Record<keyof T, any>>): Promise<T> {
+	async restore(filterQuery: FilterQuery<T>): Promise<T> {
 		const result = await this.model.findUnique({ where: filterQuery });
 
 		if (!result) {
@@ -136,5 +136,11 @@ export abstract class AbstractRepository<T extends { id: string }> implements IR
 
 	async transaction<R>(callback: (db: DatabaseService) => Promise<R>): Promise<R> {
 		return this.db.$transaction(callback);
+	}
+
+	async count(where: FilterQuery<T> = {}): Promise<number> {
+		return this.model.count({
+			where,
+		});
 	}
 }

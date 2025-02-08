@@ -6,6 +6,9 @@ export interface FindManyOptions<T> {
 		skip?: number;
 		take?: number;
 	};
+	orderBy?: {
+		[key: string]: 'asc' | 'desc';
+	};
 	include?: any;
 }
 
@@ -24,6 +27,15 @@ export interface UpdateOptions<T> {
 	data: Partial<T>;
 	include?: any;
 }
+
+export interface Pagination {
+	total: number;
+	page: number;
+	limit?: number;
+	pages: number;
+}
+
+export type FilterQuery<T> = Partial<Record<keyof T, any>>;
 
 export interface IRepository<T extends { id: string }> {
 	create(options: CreateOptions<T>): Promise<T>;
