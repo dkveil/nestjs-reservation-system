@@ -1,39 +1,33 @@
-module.exports = {
-  parser: '@typescript-eslint/parser',
-  parserOptions: {
-    project: 'tsconfig.json',
-    tsconfigRootDir: __dirname,
-    sourceType: 'module',
+// Run this command to generate base config and vs code settings:
+// pnpm dlx @antfu/eslint-config@latest
+
+import antfu from '@antfu/eslint-config';
+
+export default antfu({
+  type: 'app',
+  typescript: true,
+  formatters: true,
+  stylistic: {
+    indent: 2,
+    semi: true,
+    quotes: 'single',
   },
-  plugins: ['@typescript-eslint/eslint-plugin'],
-  extends: [
-    'plugin:@typescript-eslint/recommended',
-    'plugin:prettier/recommended',
-  ],
-  root: true,
-  env: {
-    node: true,
-    jest: true,
-  },
-  ignorePatterns: ['.eslintrc.js'],
+}, {
   rules: {
-    '@typescript-eslint/interface-name-prefix': 'off',
-    '@typescript-eslint/explicit-function-return-type': 'off',
-    '@typescript-eslint/explicit-module-boundary-types': 'off',
-    '@typescript-eslint/no-explicit-any': 'off',
-    'prettier/prettier': [
-      'error',
-      {
-        "semi": true,
-        "singleQuote": true,
-        "printWidth": 120,
-        "arrowParens": "avoid",
-        "tabWidth": 2,
-        "useTabs": true,
-        "bracketSpacing": true,
-        "trailingComma": "es5"
-      },
-    ],
-    'prettier/prettier': 'off',
+    'ts/no-redeclare': 'off',
+    'ts/consistent-type-definitions': ['error', 'type'],
+    'ts/consistent-type-imports': 'off',
+    'no-console': ['warn'],
+    'antfu/no-top-level-await': ['off'],
+    'node/prefer-global/process': ['off'],
+    'node/no-process-env': ['error'],
+    'perfectionist/sort-imports': ['error', {
+      tsconfigRootDir: '.',
+    }],
+    'unicorn/filename-case': ['error', {
+      case: 'kebabCase',
+      ignore: ['README.md'],
+    }],
+    'style/quotes': ['error', 'single'],
   },
-};
+});

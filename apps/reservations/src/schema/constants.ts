@@ -1,8 +1,8 @@
 export const RESERVATION_CONSTANTS = {
-	MIN_GUESTS: 1,
-	MAX_GUESTS: 10,
-	CURRENCIES: ['PLN', 'EUR', 'USD'] as const,
-	DEFAULT_CURRENCY: 'PLN',
+  MIN_GUESTS: 1,
+  MAX_GUESTS: 10,
+  CURRENCIES: ['PLN', 'EUR', 'USD'] as const,
+  DEFAULT_CURRENCY: 'PLN',
 } as const;
 
 export type SupportedCurrency = (typeof RESERVATION_CONSTANTS.CURRENCIES)[number];
