@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { CreateReservationDto } from './dto';
 import { ReservationsRepository } from './reservations.repository';
 import { DatabaseService, RedisService, Pagination, FilterQuery, FindManyOptions } from '@app/common';
@@ -26,7 +26,7 @@ export class ReservationsService {
 				});
 
 				if (overlapping) {
-					throw new Error('This time slot is already booked');
+					throw new ConflictException('This time slot is already booked');
 				}
 
 				const reservationData: ReservationCreateInput = {
@@ -50,6 +50,9 @@ export class ReservationsService {
 
 			return reservation;
 		} catch (error) {
+			if (error.status) {
+				throw error;
+			}
 			throw error;
 		}
 	}
@@ -57,15 +60,23 @@ export class ReservationsService {
 	async findAll(query: FindReservationsDto): Promise<{ data: Reservation[]; pagination: Pagination }> {
 		const { page, limit, order, orderBy, status, startDate, endDate, placeId, userId } = query;
 
-		const where: FilterQuery<FindReservationsDto> = {};
-
-		if (status) where.status = status;
-		if (userId) where.userId = userId;
-		if (placeId) where.placeId = placeId;
-		if (startDate) where.startDate = { gte: startDate };
-		if (endDate) where.endDate = { lte: endDate };
-
 		try {
+			if (this.redisService.isEnabled()) {
+				const cachedKey = `reservations:${JSON.stringify(query)}`;
+				const cachedData = await this.redisService.get(cachedKey);
+
+				if (cachedData) {
+					return JSON.parse(cachedData);
+				}
+			}
+
+			const where: FilterQuery<FindReservationsDto> = {};
+
+			if (status) where.status = status;
+			if (userId) where.userId = userId;
+			if (placeId) where.placeId = placeId;
+			if (startDate) where.startDate = { gte: startDate };
+			if (endDate) where.endDate = { lte: endDate };
 			const [data, total] = await Promise.all([
 				this.reservationsRepository.findMany({
 					filterQuery: where,
@@ -89,10 +100,40 @@ export class ReservationsService {
 
 			const result = { data, pagination };
 
-			const cachedKey = `reservations:${JSON.stringify(query)}`;
-			await this.redisService.set(cachedKey, JSON.stringify(result), 900);
+			if (this.redisService.isEnabled()) {
+				const cachedKey = `reservations:${JSON.stringify(query)}`;
+				await this.redisService.set(cachedKey, JSON.stringify(result), 900);
+			}
 
 			return result;
+		} catch (error) {
+			throw error;
+		}
+	}
+
+	async findOne(id: string): Promise<Reservation> {
+		try {
+			if (this.redisService.isEnabled()) {
+				const cachedKey = `reservation:${id}`;
+				const cachedReservation = await this.redisService.get(cachedKey);
+
+				if (cachedReservation) {
+					return JSON.parse(cachedReservation);
+				}
+			}
+
+			const reservation = await this.reservationsRepository.findOne({ filterQuery: { id } });
+
+			if (!reservation) {
+				throw new NotFoundException('Reservation not found');
+			}
+
+			if (this.redisService.isEnabled()) {
+				const cachedKey = `reservation:${id}`;
+				await this.redisService.set(cachedKey, JSON.stringify(reservation), 900);
+			}
+
+			return reservation;
 		} catch (error) {
 			throw error;
 		}

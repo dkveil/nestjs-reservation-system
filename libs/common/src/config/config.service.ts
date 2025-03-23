@@ -16,4 +16,8 @@ export class ConfigService {
 			password: this.configService.get<string>('REDIS_PASSWORD')!,
 		};
 	}
+
+	get useRedis(): boolean {
+		return this.configService.get<boolean>('USE_REDIS') ?? false;
+	}
 }

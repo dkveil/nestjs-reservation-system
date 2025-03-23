@@ -7,11 +7,19 @@ import { ConfigService } from '@app/common';
 export class RedisService implements OnModuleInit, OnModuleDestroy {
 	private readonly logger = new Logger(RedisService.name);
 	private isConnected = false;
-	private client: Redis;
+	private client: Redis | null = null;
+	private readonly useRedis: boolean;
 
-	constructor(private configService: ConfigService) {}
+	constructor(private configService: ConfigService) {
+		this.useRedis = this.configService.useRedis;
+	}
 
 	async onModuleInit() {
+		if (!this.useRedis) {
+			this.logger.log('Redis is disabled via configuration');
+			return;
+		}
+
 		try {
 			const { host, port, password } = this.configService.redisConnectData;
 
@@ -33,7 +41,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 	}
 
 	async onModuleDestroy() {
-		if (this.isConnected) {
+		if (this.isConnected && this.client) {
 			try {
 				await this.client.quit();
 				this.isConnected = false;
@@ -46,6 +54,10 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 	}
 
 	async get(key: string): Promise<string | null> {
+		if (!this.useRedis || !this.client) {
+			return null;
+		}
+
 		try {
 			return await this.client.get(key);
 		} catch (error) {
@@ -54,7 +66,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 		}
 	}
 
-	async set(key: string, value: string, ttl?: number): Promise<'OK'> {
+	async set(key: string, value: string, ttl?: number): Promise<'OK' | null> {
+		if (!this.useRedis || !this.client) {
+			return null;
+		}
+
 		try {
 			if (ttl) {
 				return await this.client.set(key, value, 'EX', ttl);
@@ -64,5 +80,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 			this.logger.error(`Error setting key ${key}:`, error);
 			throw error;
 		}
+	}
+
+	isEnabled(): boolean {
+		return this.useRedis && this.isConnected;
 	}
 }
