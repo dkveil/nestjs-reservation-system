@@ -1,12 +1,13 @@
-import { Body, Controller, Get, Param, Post, Query, UseFilters } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseFilters } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 
 import { ZodFilter, ZodPipe } from '@app/common';
 
 import { CreateReservationDto, CreateReservationDtoSwagger } from './dto/create-reservation.dto';
 import { FindReservationsDto, FindReservationsDtoSwagger } from './dto/find-reservations.dto';
+import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { ReservationsService } from './reservations.service';
-import { CreateReservationSchema } from './schema/reservation.schema';
+import { CreateReservationSchema, UpdateReservationSchema } from './schema/reservation.schema';
 
 @ApiTags('Reservations')
 @Controller('reservations')
@@ -84,5 +85,23 @@ export class ReservationsController {
   @ApiResponse({ status: 404, description: 'Reservation not found' })
   findOne(@Param('id') id: string) {
     return this.reservationsService.findOne(id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update reservation' })
+  @ApiParam({
+    name: 'id',
+    description: 'Reservation ID',
+    type: 'string',
+    format: 'uuid',
+    required: true,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Reservation updated successfully',
+    type: CreateReservationDtoSwagger,
+  })
+  update(@Param('id') id: string, @Body(new ZodPipe(UpdateReservationSchema)) updateReservationDto: UpdateReservationDto) {
+    return this.reservationsService.update(id, updateReservationDto);
   }
 }

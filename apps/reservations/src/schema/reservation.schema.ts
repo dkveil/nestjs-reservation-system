@@ -25,4 +25,7 @@ export const CreateReservationSchema = z
     message: 'End date must be after start date',
   });
 
-export const UpdateReservationSchema = z.object(ReservationSchemaObject).partial();
+export const UpdateReservationSchema = z.object({
+  status: z.enum(RESERVATION_CONSTANTS.STATUSES),
+  notes: z.string().optional(),
+}).partial();

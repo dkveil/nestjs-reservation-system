@@ -2,7 +2,7 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 
 import { DatabaseService, FilterQuery, Pagination, RedisService } from '@app/common';
 
-import { CreateReservationDto } from './dto';
+import { CreateReservationDto, UpdateReservationDto } from './dto';
 import { FindReservationsDto } from './dto/find-reservations.dto';
 import { Reservation, ReservationCreateInput } from './entities';
 import { ReservationsRepository } from './reservations.repository';
@@ -122,6 +122,41 @@ export class ReservationsService {
     if (!reservation) {
       throw new NotFoundException('Reservation not found');
     }
+
+    if (this.redisService.isEnabled()) {
+      const cachedKey = `reservation:${id}`;
+      await this.redisService.set(cachedKey, JSON.stringify(reservation), 900);
+    }
+
+    return reservation;
+  }
+
+  async update(id: string, updateReservationDto: UpdateReservationDto): Promise<Reservation> {
+    const reservation = await this.reservationsRepository.transaction(async (db: DatabaseService) => {
+      const existingReservation = await db.reservation.findUnique({
+        where: { id },
+      });
+
+      if (!existingReservation) {
+        throw new NotFoundException('Reservation not found');
+      }
+
+      const { status, notes } = updateReservationDto;
+
+      const updateData: FilterQuery<UpdateReservationDto> = {};
+
+      if (status)
+        updateData.status = status;
+      if (notes)
+        updateData.notes = notes;
+
+      const reservation = await db.reservation.update({
+        where: { id },
+        data: updateData,
+      });
+
+      return reservation;
+    });
 
     if (this.redisService.isEnabled()) {
       const cachedKey = `reservation:${id}`;
