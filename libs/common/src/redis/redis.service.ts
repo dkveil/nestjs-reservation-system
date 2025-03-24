@@ -86,6 +86,19 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async del(key: string): Promise<number> {
+    if (!this.useRedis || !this.client) {
+      return 0;
+    }
+    try {
+      return await this.client.del(key);
+    }
+    catch (error) {
+      this.logger.error(`Error deleting key ${key}:`, error);
+      throw error;
+    }
+  }
+
   isEnabled(): boolean {
     return this.useRedis && this.isConnected;
   }

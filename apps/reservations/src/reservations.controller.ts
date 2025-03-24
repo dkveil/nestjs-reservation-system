@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseFilters } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseFilters } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 
 import { ZodFilter, ZodPipe } from '@app/common';
@@ -103,5 +103,41 @@ export class ReservationsController {
   })
   update(@Param('id') id: string, @Body(new ZodPipe(UpdateReservationSchema)) updateReservationDto: UpdateReservationDto) {
     return this.reservationsService.update(id, updateReservationDto);
+  }
+
+  @Patch(':id/cancel')
+  @ApiOperation({ summary: 'Cancel reservation' })
+  @ApiParam({
+    name: 'id',
+    description: 'Reservation ID',
+    type: 'string',
+    format: 'uuid',
+    required: true,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Reservation canceled successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Reservation not found' })
+  cancel(@Param('id') id: string) {
+    return this.reservationsService.cancel(id);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete reservation' })
+  @ApiParam({
+    name: 'id',
+    description: 'Reservation ID',
+    type: 'string',
+    format: 'uuid',
+    required: true,
+  })
+  @ApiResponse({
+    status: 204,
+    description: 'Reservation deleted successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Reservation not found' })
+  async remove(@Param('id') id: string): Promise<void> {
+    await this.reservationsService.remove(id);
   }
 }
