@@ -1,16 +1,26 @@
 services:
-  postgres:
-    image: postgres:latest
-    container_name: reservations-app-postgres
+  reservations:
+    build:
+      context: .
+      dockerfile: ./apps/reservations/Dockerfile
+      target: development
+    command: pnpm run dev reservations
     ports:
-      - '${POSTGRES_PORT}:${POSTGRES_PORT}'
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-
+      - '${RESERVATIONS_PORT}:${RESERVATIONS_PORT}'
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - .:/usr/src/app
+    develop:
+      watch:
+        - path: ./apps/reservations/src/**/*.ts
+          action: sync
+          target: /usr/src/app/apps/reservations/src/
+        - path: ./libs/**/*.ts
+          action: sync
+          target: /usr/src/app/libs/
+        - path: ./package.json
+          action: rebuild
+        - path: ./pnpm-lock.yaml
+          action: rebuild
 
   redis:
     image: redis:latest
@@ -24,5 +34,4 @@ services:
       - redis-data:/data
 
 volumes:
-  postgres-data:
   redis-data:
