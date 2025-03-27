@@ -23,6 +23,10 @@
     { "rule": "*semi", "severity": "off", "fixable": true }
   ],
 
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+
   // Enable eslint for all supported languages
   "eslint.validate": [
     "javascript",

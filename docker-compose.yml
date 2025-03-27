@@ -21,7 +21,28 @@ services:
           action: rebuild
         - path: ./pnpm-lock.yaml
           action: rebuild
-
+  auth:
+    build:
+      context: .
+      dockerfile: ./apps/auth/Dockerfile
+      target: development
+    command: pnpm run dev auth
+    ports:
+      - '${AUTH_PORT}:${AUTH_PORT}'
+    volumes:
+      - .:/usr/src/app
+    develop:
+      watch:
+        - path: ./apps/auth/src/**/*.ts
+          action: sync
+          target: /usr/src/app/apps/auth/src/
+        - path: ./libs/**/*.ts
+          action: sync
+          target: /usr/src/app/libs/
+        - path: ./package.json
+          action: rebuild
+        - path: ./pnpm-lock.yaml
+          action: rebuild
   redis:
     image: redis:latest
     container_name: reservations-app-redis
