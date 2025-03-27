@@ -1,4 +1,5 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
 
 import { DatabaseService } from '@app/common';
 import { CreateUserDto } from 'apps/auth/src/users/dto/create-user-dto';
@@ -13,6 +14,8 @@ export class UsersService {
     const user = await this.usersRepository.transaction(async (db: DatabaseService) => {
       const { email, password } = createUserDto;
 
+      const hashedPassword = await bcrypt.hash(password, 10);
+
       const existingUser = await db.user.findUnique({ where: { email } });
 
       if (existingUser) {
@@ -21,11 +24,27 @@ export class UsersService {
 
       const userData: UserCreateInput = {
         email,
-        password,
+        password: hashedPassword,
       };
 
       return await db.user.create({ data: userData });
     });
+
+    return user;
+  }
+
+  async verifyUser(email: string, password: string) {
+    const user = await this.usersRepository.findOne({ filterQuery: { email } });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
     return user;
   }

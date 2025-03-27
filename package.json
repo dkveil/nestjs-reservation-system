@@ -1,9 +1,9 @@
 {
   "name": "reservation-system",
   "version": "0.0.1",
+  "private": true,
   "description": "",
   "author": "",
-  "private": true,
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
@@ -32,12 +32,18 @@
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.1",
+    "@nestjs/jwt": "^11.0.0",
     "@nestjs/mapped-types": "*",
+    "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.0.3",
     "@prisma/client": "^6.3.1",
+    "bcryptjs": "^3.0.2",
+    "express": "^4.21.2",
     "ioredis": "^5.5.0",
     "nestjs-zod": "^4.2.1",
+    "passport-jwt": "^4.0.1",
+    "passport-local": "^1.0.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "swagger-ui-express": "^5.0.1",
@@ -56,6 +62,7 @@
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.13.1",
+    "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^6.0.2",
     "eslint": "^9.23.0",
     "eslint-config-prettier": "^10.0.1",
@@ -100,11 +107,6 @@
       "^@app/common(|/.*)$": "<rootDir>/libs/common/src/$1"
     }
   },
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
-      "eslint --fix"
-    ]
-  },
   "pnpm": {
     "onlyBuiltDependencies": [
       "@nestjs/core",
@@ -114,6 +116,11 @@
       "@swc/core",
       "esbuild",
       "prisma"
+    ]
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix"
     ]
   }
 }
