@@ -2,9 +2,11 @@ import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/co
 import * as bcrypt from 'bcryptjs';
 
 import { DatabaseService } from '@app/common';
-import { CreateUserDto } from 'apps/auth/src/users/dto/create-user-dto';
-import { UserCreateInput } from 'apps/auth/src/users/entities';
-import { UsersRepository } from 'apps/auth/src/users/users.repository';
+
+import { CreateUserDto } from './dto/create-user.dto';
+import { GetUserDto } from './dto/get-user.dto';
+import { UserCreateInput } from './entities';
+import { UsersRepository } from './users.repository';
 
 @Injectable()
 export class UsersService {
@@ -47,5 +49,13 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  async getUser(getUserDto: GetUserDto) {
+    const { id } = GetUserDto.parse(getUserDto);
+
+    return this.usersRepository.findOne({
+      filterQuery: { id },
+    });
   }
 }

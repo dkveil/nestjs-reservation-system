@@ -1,9 +1,12 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 import { ZodPipe } from '@app/common';
 
-import { CreateUserDto, CreateUserDtoSwagger } from './dto/create-user-dto';
+import { CurrentUser } from '../current-user.decorator';
+import { JwtAuthGuard } from '../guards';
+import { CreateUserDto, CreateUserDtoSwagger } from './dto/create-user.dto';
+import { User } from './entities';
 import { UsersService } from './users.service';
 
 @Controller('users')
@@ -27,5 +30,13 @@ export class UsersController {
   })
   createUser(@Body(new ZodPipe(CreateUserDto)) createUserDto: CreateUserDto) {
     return this.usersService.createUser(createUserDto);
+  }
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  getUser(@CurrentUser() user: User) {
+    const { id } = user;
+
+    return this.usersService.getUser({ id });
   }
 }
