@@ -12,6 +12,12 @@ export default antfu({
     semi: true,
     quotes: 'single',
   },
+  languageOptions: {
+    parserOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+    },
+  },
 }, {
   rules: {
     'ts/no-redeclare': 'off',
