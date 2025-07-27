@@ -21,6 +21,10 @@ services:
           action: rebuild
         - path: ./pnpm-lock.yaml
           action: rebuild
+    env_file:
+      - .env
+    depends_on:
+      - redis
   auth:
     build:
       context: .
@@ -43,6 +47,10 @@ services:
           action: rebuild
         - path: ./pnpm-lock.yaml
           action: rebuild
+    env_file:
+      - .env
+    depends_on:
+      - redis
   redis:
     image: redis:latest
     container_name: reservations-app-redis
