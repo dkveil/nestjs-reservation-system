@@ -4,11 +4,15 @@ import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
 
 import { User } from './users/entities';
-import { UsersRepository } from './users/users.repository';
+import { UsersService } from './users/users.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly jwtService: JwtService, private readonly configService: ConfigService, private readonly usersRepository: UsersRepository) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+    private readonly usersService: UsersService,
+  ) {}
 
   async login(user: User, response: Response) {
     const tokenPayload = {

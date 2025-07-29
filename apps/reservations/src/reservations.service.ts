@@ -14,9 +14,9 @@ export class ReservationsService {
     private readonly redisService: RedisService,
   ) {}
 
-  async create(createReservationDto: CreateReservationDto): Promise<Reservation> {
+  async create(createReservationDto: CreateReservationDto, userId: string): Promise<Reservation> {
     const reservation = await this.reservationsRepository.transaction(async (db: DatabaseService) => {
-      const { userId, placeId, startDate, endDate, guestsCount, totalPrice, currency, notes } = createReservationDto;
+      const { placeId, startDate, endDate, guestsCount, totalPrice, currency, notes } = createReservationDto;
 
       const overlapping = await db.reservation.findFirst({
         where: {

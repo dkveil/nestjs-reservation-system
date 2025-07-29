@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as cookieParser from 'cookie-parser';
 
 import { ConfigService, ZodFilter } from '@app/common';
 
@@ -7,6 +8,8 @@ import { ReservationsModule } from './reservations.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(ReservationsModule);
+
+  app.use(cookieParser());
 
   const configService = app.get(ConfigService);
   const isProduction = configService.get('NODE_ENV') === 'production';

@@ -7,11 +7,11 @@ import { CreateReservationSchema } from '../schema/reservation.schema';
 export type CreateReservationDto = z.infer<typeof CreateReservationSchema>;
 
 export class CreateReservationDtoSwagger {
-  @ApiProperty({
-    description: 'User ID',
-    format: 'uuid',
-  })
-  userId: string;
+  // @ApiProperty({
+  //   description: 'User ID',
+  //   format: 'uuid',
+  // })
+  // userId: string;
 
   @ApiProperty({
     description: 'Place ID',

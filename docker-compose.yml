@@ -25,6 +25,7 @@ services:
       - .env
     depends_on:
       - redis
+      - auth
   auth:
     build:
       context: .
@@ -33,6 +34,7 @@ services:
     command: pnpm run dev auth
     ports:
       - '${AUTH_PORT}:${AUTH_PORT}'
+      - '${AUTH_TCP_PORT}:${AUTH_TCP_PORT}'
     volumes:
       - .:/usr/src/app
     develop:

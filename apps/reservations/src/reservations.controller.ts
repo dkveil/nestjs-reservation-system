@@ -1,7 +1,7 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseFilters } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseFilters, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 
-import { ZodFilter, ZodPipe } from '@app/common';
+import { CurrentUser, JwtAuthGuard, User, ZodFilter, ZodPipe } from '@app/common';
 
 import { CreateReservationDto, CreateReservationDtoSwagger } from './dto/create-reservation.dto';
 import { FindReservationsDto, FindReservationsDtoSwagger } from './dto/find-reservations.dto';
@@ -15,6 +15,7 @@ import { CreateReservationSchema, UpdateReservationSchema } from './schema/reser
 export class ReservationsController {
   constructor(private readonly reservationsService: ReservationsService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post()
   @ApiOperation({ summary: 'Create new reservation' })
   @ApiResponse({
@@ -30,11 +31,14 @@ export class ReservationsController {
     status: 409,
     description: 'This time slot is already booked',
   })
-  create(
+  async create(
     @Body(new ZodPipe(CreateReservationSchema))
     createReservationDto: CreateReservationDto,
+    @CurrentUser() user: User,
   ) {
-    return this.reservationsService.create(createReservationDto);
+    const userId = user.id;
+
+    return this.reservationsService.create(createReservationDto, userId);
   }
 
   @Get()
@@ -65,7 +69,7 @@ export class ReservationsController {
     status: 400,
     description: 'Invalid query parameters',
   })
-  findAll(@Query(new ZodPipe(FindReservationsDto)) query: FindReservationsDto) {
+  async findAll(@Query(new ZodPipe(FindReservationsDto)) query: FindReservationsDto) {
     return this.reservationsService.findAll(query);
   }
 
@@ -83,7 +87,7 @@ export class ReservationsController {
     description: 'Found reservation',
   })
   @ApiResponse({ status: 404, description: 'Reservation not found' })
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string) {
     return this.reservationsService.findOne(id);
   }
 
@@ -101,7 +105,7 @@ export class ReservationsController {
     description: 'Reservation updated successfully',
     type: CreateReservationDtoSwagger,
   })
-  update(@Param('id') id: string, @Body(new ZodPipe(UpdateReservationSchema)) updateReservationDto: UpdateReservationDto) {
+  async update(@Param('id') id: string, @Body(new ZodPipe(UpdateReservationSchema)) updateReservationDto: UpdateReservationDto) {
     return this.reservationsService.update(id, updateReservationDto);
   }
 
@@ -119,7 +123,7 @@ export class ReservationsController {
     description: 'Reservation canceled successfully',
   })
   @ApiResponse({ status: 404, description: 'Reservation not found' })
-  cancel(@Param('id') id: string) {
+  async cancel(@Param('id') id: string) {
     return this.reservationsService.cancel(id);
   }
 
