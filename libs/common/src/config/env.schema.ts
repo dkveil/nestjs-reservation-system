@@ -11,6 +11,10 @@ export const envSchema = z.object({
   JWT_SECRET: z.string(),
   JWT_EXPIRATION_TIME: z.coerce.number().default(3600),
   CORS_ORIGIN: z.string().default('*'),
+  RESERVATIONS_PORT: z.string().default('3158'),
   AUTH_TCP_HOST: z.string().default('auth'),
   AUTH_TCP_PORT: z.coerce.number().default(3001),
+  PAYMENTS_HOST: z.string().default('payments'),
+  PAYMENTS_PORT: z.coerce.number().default(3159),
+  PAYMENTS_TCP_PORT: z.coerce.number().default(3002),
 });
