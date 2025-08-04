@@ -1,6 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 
-import { DatabaseService, FilterQuery, Pagination, RedisService } from '@app/common';
+import { DatabaseService, FilterQuery, Pagination, PAYMENTS_SERVICE, RedisService } from '@app/common';
 
 import { CreateReservationDto, UpdateReservationDto } from './dto';
 import { FindReservationsDto } from './dto/find-reservations.dto';
@@ -12,11 +14,16 @@ export class ReservationsService {
   constructor(
     private readonly reservationsRepository: ReservationsRepository,
     private readonly redisService: RedisService,
+    @Inject(PAYMENTS_SERVICE) private readonly paymentsService: ClientProxy,
   ) {}
 
-  async create(createReservationDto: CreateReservationDto, userId: string): Promise<Reservation> {
-    const reservation = await this.reservationsRepository.transaction(async (db: DatabaseService) => {
-      const { placeId, startDate, endDate, guestsCount, totalPrice, currency, notes } = createReservationDto;
+  async create(createReservationDto: CreateReservationDto, userData: { id: string; email: string }): Promise<Reservation> {
+    return this.reservationsRepository.transaction(async (db: DatabaseService) => {
+      const { placeId, startDate, endDate, guestsCount, totalPrice, currency, notes, charge } = createReservationDto;
+
+      if (!charge) {
+        throw new BadRequestException('Payment charge data is required');
+      }
 
       const overlapping = await db.reservation.findFirst({
         where: {
@@ -31,7 +38,7 @@ export class ReservationsService {
       }
 
       const reservationData: ReservationCreateInput = {
-        userId,
+        userId: userData.id,
         placeId,
         startDate,
         endDate,
@@ -41,15 +48,36 @@ export class ReservationsService {
         notes,
       };
 
-      return await db.reservation.create({
-        data: reservationData,
-      });
+      if (!this.paymentsService) {
+        throw new Error('Payments service is not available');
+      }
+
+      try {
+        const reservation = await db.reservation.create({
+          data: {
+            ...reservationData,
+            status: ReservationStatus.PENDING_PAYMENT,
+          },
+        });
+
+        const chargeData = {
+          ...charge,
+          email: userData.email,
+          reservationId: reservation.id,
+        };
+
+        const paymentResult = await firstValueFrom(this.paymentsService.send('create-checkout-session', chargeData));
+
+        await this.cacheReservation(reservation);
+        await this.invalidateRelatedCache(placeId, startDate, endDate);
+
+        return { reservation, paymentUrl: paymentResult.url };
+      }
+      catch (error) {
+        console.error('Payment or reservation creation failed:', error);
+        throw new BadRequestException('Payment processing or reservation creation failed');
+      }
     });
-
-    const cachedKey = `reservation:${reservation.id}`;
-    await this.redisService.set(cachedKey, JSON.stringify(reservation), 900);
-
-    return reservation;
   }
 
   async findAll(query: FindReservationsDto): Promise<{ data: Reservation[]; pagination: Pagination }> {
@@ -201,6 +229,53 @@ export class ReservationsService {
     if (this.redisService.isEnabled()) {
       const cachedKey = `reservation:${id}`;
       await this.redisService.del(cachedKey);
+    }
+  }
+
+  private async cacheReservation(reservation: Reservation): Promise<void> {
+    try {
+      const cacheKey = `reservation:${reservation.id}`;
+      const cacheData = {
+        ...reservation,
+        cachedAt: new Date().toISOString(),
+      };
+
+      const ttl = 24 * 60 * 60;
+      await this.redisService.set(cacheKey, JSON.stringify(cacheData), ttl);
+
+      const userCacheKey = `user:${reservation.userId}:reservations`;
+      await this.addToUserReservationsList(userCacheKey, reservation.id);
+    }
+    catch (error) {
+      console.error('Cache error:', error);
+    }
+  }
+
+  private async invalidateRelatedCache(placeId: string, startDate: string, endDate: string): Promise<void> {
+    try {
+      const placeCacheKey = `place:${placeId}:availability`;
+      await this.redisService.del(placeCacheKey);
+
+      const dateRangeCacheKey = `availability:${placeId}:${startDate}:${endDate}`;
+      await this.redisService.del(dateRangeCacheKey);
+    }
+    catch (error) {
+      console.error('Cache invalidation error:', error);
+    }
+  }
+
+  private async addToUserReservationsList(userCacheKey: string, reservationId: string): Promise<void> {
+    try {
+      const existingList = await this.redisService.get(userCacheKey);
+      const reservationIds = existingList ? JSON.parse(existingList) : [];
+
+      if (!reservationIds.includes(reservationId)) {
+        reservationIds.push(reservationId);
+        await this.redisService.set(userCacheKey, JSON.stringify(reservationIds), 3600); // 1h TTL
+      }
+    }
+    catch (error) {
+      console.error('User cache list error:', error);
     }
   }
 }

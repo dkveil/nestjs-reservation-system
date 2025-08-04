@@ -1,18 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
 
+import { CreateChargeDtoSwagger, CreateChargeSchema } from '@app/common';
+
 import { RESERVATION_CONSTANTS } from '../schema/constants';
 import { CreateReservationSchema } from '../schema/reservation.schema';
 
-export type CreateReservationDto = z.infer<typeof CreateReservationSchema>;
+const AdditionalFieldsSchema = z.object({
+  charge: CreateChargeSchema,
+});
+
+export const ExtendedCreateReservationSchema = CreateReservationSchema.and(AdditionalFieldsSchema);
+
+export type CreateReservationDto = z.infer<typeof ExtendedCreateReservationSchema>;
 
 export class CreateReservationDtoSwagger {
-  // @ApiProperty({
-  //   description: 'User ID',
-  //   format: 'uuid',
-  // })
-  // userId: string;
-
   @ApiProperty({
     description: 'Place ID',
     format: 'uuid',
@@ -57,4 +59,10 @@ export class CreateReservationDtoSwagger {
     required: false,
   })
   notes?: string;
+
+  @ApiProperty({
+    description: 'Card details',
+    type: CreateChargeDtoSwagger,
+  })
+  charge: CreateChargeDtoSwagger;
 }

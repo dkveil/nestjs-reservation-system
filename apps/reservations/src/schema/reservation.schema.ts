@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { RESERVATION_CONSTANTS } from './constants';
 
 const ReservationSchemaObject = {
-  userId: z.string().uuid(),
   placeId: z.string().uuid(),
   startDate: z.string().datetime(),
   endDate: z.string().datetime(),

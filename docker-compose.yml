@@ -26,6 +26,7 @@ services:
     depends_on:
       - redis
       - auth
+      - payments
   auth:
     build:
       context: .
@@ -42,6 +43,33 @@ services:
         - path: ./apps/auth/src/**/*.ts
           action: sync
           target: /usr/src/app/apps/auth/src/
+        - path: ./libs/**/*.ts
+          action: sync
+          target: /usr/src/app/libs/
+        - path: ./package.json
+          action: rebuild
+        - path: ./pnpm-lock.yaml
+          action: rebuild
+    env_file:
+      - .env
+    depends_on:
+      - redis
+  payments:
+    build:
+      context: .
+      dockerfile: ./apps/payments/Dockerfile
+      target: development
+    command: pnpm run dev payments
+    ports:
+      - '${PAYMENTS_PORT}:${PAYMENTS_PORT}'
+      - '${PAYMENTS_TCP_PORT}:${PAYMENTS_TCP_PORT}'
+    volumes:
+      - .:/usr/src/app
+    develop:
+      watch:
+        - path: ./apps/auth/src/**/*.ts
+          action: sync
+          target: /usr/src/app/apps/payments/src/
         - path: ./libs/**/*.ts
           action: sync
           target: /usr/src/app/libs/

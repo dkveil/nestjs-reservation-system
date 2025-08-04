@@ -9,16 +9,17 @@ datasource db {
 }
 
 enum ReservationStatus {
-  PENDING    // Oczekująca
-  CONFIRMED  // Potwierdzona
-  CANCELED   // Anulowana
-  COMPLETED  // Zakończona
-  REJECTED   // Odrzucona
+  PENDING_APPROVAL    // Oczekująca na potwierdzenie właściciela
+  PENDING_PAYMENT     // Oczekująca na płatność rezerwującego
+  CONFIRMED           // Potwierdzona
+  CANCELED            // Anulowana
+  COMPLETED           // Zakończona
+  REJECTED            // Odrzucona
 }
 
 model Reservation {
   id         String   @id @default(uuid())
-  status     ReservationStatus @default(PENDING)
+  status     ReservationStatus @default(PENDING_PAYMENT)
   userId     String
   placeId    String
   invoiceId  String?

@@ -49,7 +49,7 @@ export class FindReservationsDtoSwagger {
 
   @ApiProperty({
     description: 'Reservation status',
-    enum: ['PENDING', 'CONFIRMED', 'CANCELED', 'COMPLETED', 'REJECTED'],
+    enum: ['PENDING_PAYMENT', 'PENDING_APPROVAL', 'CONFIRMED', 'CANCELED', 'COMPLETED', 'REJECTED'],
     required: false,
   })
   status?: string;

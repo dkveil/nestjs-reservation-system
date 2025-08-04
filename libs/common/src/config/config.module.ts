@@ -13,7 +13,6 @@ import { envSchema } from './env.schema';
       validate: env => envSchema.parse(env),
     }),
   ],
-
   providers: [ConfigService],
   exports: [ConfigService],
 })

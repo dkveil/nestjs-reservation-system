@@ -3,11 +3,11 @@ import { ApiOperation, ApiParam, ApiResponse, ApiTags, getSchemaPath } from '@ne
 
 import { CurrentUser, JwtAuthGuard, User, ZodFilter, ZodPipe } from '@app/common';
 
-import { CreateReservationDto, CreateReservationDtoSwagger } from './dto/create-reservation.dto';
+import { CreateReservationDto, CreateReservationDtoSwagger, ExtendedCreateReservationSchema } from './dto/create-reservation.dto';
 import { FindReservationsDto, FindReservationsDtoSwagger } from './dto/find-reservations.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { ReservationsService } from './reservations.service';
-import { CreateReservationSchema, UpdateReservationSchema } from './schema/reservation.schema';
+import { UpdateReservationSchema } from './schema/reservation.schema';
 
 @ApiTags('Reservations')
 @Controller('reservations')
@@ -32,13 +32,16 @@ export class ReservationsController {
     description: 'This time slot is already booked',
   })
   async create(
-    @Body(new ZodPipe(CreateReservationSchema))
+    @Body(new ZodPipe(ExtendedCreateReservationSchema))
     createReservationDto: CreateReservationDto,
     @CurrentUser() user: User,
   ) {
-    const userId = user.id;
+    const userData = {
+      id: user.id,
+      email: user.email,
+    };
 
-    return this.reservationsService.create(createReservationDto, userId);
+    return this.reservationsService.create(createReservationDto, userData);
   }
 
   @Get()
