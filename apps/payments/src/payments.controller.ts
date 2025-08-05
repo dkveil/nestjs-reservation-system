@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Post, UsePipes } from '@nestjs/common';
+import { Body, Controller, Post, Req, Res, UsePipes } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import { Request, Response } from 'express';
 
 import { CreateChargeDto, CreateChargeSchema, ZodPipe } from '@app/common';
 
@@ -25,17 +26,8 @@ export class PaymentsController {
     return { url: session.url };
   }
 
-  @Get('cancel')
-  async cancelCharge() {
-    console.log('cancelCharge');
-
-    return { message: 'Payment cancelled' };
-  }
-
-  @Get('success')
-  async successCharge() {
-    console.log('successCharge');
-
-    return { message: 'Payment successful' };
+  @Post('webhook')
+  async webhook(@Req() req: Request, @Res() res: Response) {
+    return this.paymentsService.handleWebhook(req, res);
   }
 }

@@ -17,8 +17,11 @@ export class ReservationsService {
     @Inject(PAYMENTS_SERVICE) private readonly paymentsService: ClientProxy,
   ) {}
 
-  async create(createReservationDto: CreateReservationDto, userData: { id: string; email: string }): Promise<Reservation> {
-    return this.reservationsRepository.transaction(async (db: DatabaseService) => {
+  async create(
+    createReservationDto: CreateReservationDto,
+    userData: { id: string; email: string },
+  ): Promise<Reservation & { paymentUrl: string }> {
+    const { reservation, paymentUrl } = await this.reservationsRepository.transaction(async (db: DatabaseService) => {
       const { placeId, startDate, endDate, guestsCount, totalPrice, currency, notes, charge } = createReservationDto;
 
       if (!charge) {
@@ -78,6 +81,8 @@ export class ReservationsService {
         throw new BadRequestException('Payment processing or reservation creation failed');
       }
     });
+
+    return { ...reservation, paymentUrl };
   }
 
   async findAll(query: FindReservationsDto): Promise<{ data: Reservation[]; pagination: Pagination }> {
