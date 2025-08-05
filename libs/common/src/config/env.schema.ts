@@ -12,6 +12,8 @@ export const envSchema = z.object({
   JWT_EXPIRATION_TIME: z.coerce.number().default(3600),
   CORS_ORIGIN: z.string().default('*'),
   RESERVATIONS_PORT: z.string().default('3158'),
+  RESERVATIONS_HOST: z.string().default('reservations'),
+  RESERVATIONS_TCP_PORT: z.coerce.number().default(3003),
   AUTH_TCP_HOST: z.string().default('auth'),
   AUTH_TCP_PORT: z.coerce.number().default(3001),
   PAYMENTS_HOST: z.string().default('payments'),
@@ -21,4 +23,5 @@ export const envSchema = z.object({
   STRIPE_SUCCESS_URL: z.string(),
   STRIPE_CANCEL_URL: z.string(),
   STRIPE_WEBHOOK_SECRET: z.string(),
+  INTER_SERVICE_SECRET: z.string(),
 });

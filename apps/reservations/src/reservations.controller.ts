@@ -7,7 +7,7 @@ import { CurrentUser, JwtAuthGuard, User, ZodFilter, ZodPipe } from '@app/common
 
 import { CreateReservationDto, CreateReservationDtoSwagger, ExtendedCreateReservationSchema } from './dto/create-reservation.dto';
 import { FindReservationsDto, FindReservationsDtoSwagger } from './dto/find-reservations.dto';
-import { UpdateReservationDto } from './dto/update-reservation.dto';
+import { UpdateReservationDto, UpdateReservationMessageDto } from './dto/update-reservation.dto';
 import { ReservationsService } from './reservations.service';
 import { UpdateReservationSchema } from './schema/reservation.schema';
 
@@ -15,7 +15,9 @@ import { UpdateReservationSchema } from './schema/reservation.schema';
 @Controller('reservations')
 @UseFilters(ZodFilter)
 export class ReservationsController {
-  constructor(private readonly reservationsService: ReservationsService) {}
+  constructor(
+    private readonly reservationsService: ReservationsService,
+  ) {}
 
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -151,9 +153,9 @@ export class ReservationsController {
   }
 
   @MessagePattern('update-reservation-status')
-  async updateReservationStatus(@Payload() data: { reservationId: string; status: string; email: string }) {
-    const { reservationId, status } = data;
+  async updateReservationStatus(@Payload() data: UpdateReservationMessageDto) {
+    const { reservationId, email, serviceToken } = data;
 
-    return this.reservationsService.update(reservationId, { status: status as ReservationStatus });
+    return this.reservationsService.updateWithEmailVerification(reservationId, { status: ReservationStatus.CONFIRMED }, email, serviceToken);
   }
 }

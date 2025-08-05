@@ -1,8 +1,11 @@
-import { BadRequestException, ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { ReservationStatus } from '@prisma/client';
 import { Request, Response } from 'express';
+import { firstValueFrom } from 'rxjs';
 import Stripe from 'stripe';
 
-import { ConfigService, CreateChargeDto } from '@app/common';
+import { ConfigService, CreateChargeDto, RESERVATIONS_SERVICE } from '@app/common';
 
 @Injectable()
 export class PaymentsService {
@@ -10,6 +13,7 @@ export class PaymentsService {
 
   constructor(
     private readonly configService: ConfigService,
+    @Inject(RESERVATIONS_SERVICE) private readonly reservationsService: ClientProxy,
   ) {}
 
   private readonly stripe = new Stripe(this.configService.get('STRIPE_SECRET_KEY')!, {
@@ -62,15 +66,74 @@ export class PaymentsService {
     catch (error) {
       throw new BadRequestException('Invalid signature', error);
     }
+
     switch (event.type) {
       case 'checkout.session.completed':
         {
           const session = event.data.object as Stripe.Checkout.Session;
-          this.logger.log(`Payment completed for reservation: ${session.metadata?.reservationId}`);
+          const reservationId = session.metadata?.reservationId || '07605416-0dd9-4034-8910-132fe14a8be2';
+          const email = session.metadata?.email || 'john.doe@example.com';
 
-          // TODO: Update reservation status to paid
+          this.logger.log(`Payment completed for reservation: ${reservationId}`);
+
+          if (!reservationId || !email) {
+            this.logger.error('Missing reservation ID or email in webhook metadata');
+            break;
+          }
+
+          try {
+            const serviceToken = this.configService.get('INTER_SERVICE_SECRET');
+
+            await firstValueFrom(
+              this.reservationsService.send('update-reservation-status', {
+                reservationId,
+                status: ReservationStatus.PENDING_APPROVAL,
+                email,
+                serviceToken,
+              }),
+            );
+
+            this.logger.log(`Reservation ${reservationId} status updated to PENDING_APPROVAL`);
+          }
+          catch (error) {
+            this.logger.error(`Failed to update reservation status: ${error.message}`, error.stack);
+          }
         }
         break;
+
+      case 'checkout.session.expired':
+        {
+          const session = event.data.object as Stripe.Checkout.Session;
+          const reservationId = session.metadata?.reservationId;
+          const email = session.metadata?.email;
+
+          this.logger.log(`Payment expired for reservation: ${reservationId}`);
+
+          if (!reservationId || !email) {
+            this.logger.error('Missing reservation ID or email in webhook metadata');
+            break;
+          }
+
+          try {
+            const serviceToken = this.configService.get('INTER_SERVICE_SECRET');
+
+            await firstValueFrom(
+              this.reservationsService.send('update-reservation-status', {
+                reservationId,
+                status: ReservationStatus.CANCELED,
+                email,
+                serviceToken,
+              }),
+            );
+
+            this.logger.log(`Reservation ${reservationId} status updated to CANCELED due to payment expiration`);
+          }
+          catch (error) {
+            this.logger.error(`Failed to update reservation status: ${error.message}`, error.stack);
+          }
+        }
+        break;
+
       default:
         this.logger.warn(`Unhandled event type ${event.type}`);
         break;

@@ -1,8 +1,8 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 
-import { DatabaseService, FilterQuery, Pagination, PAYMENTS_SERVICE, RedisService } from '@app/common';
+import { ConfigService, DatabaseService, FilterQuery, Pagination, PAYMENTS_SERVICE, RedisService } from '@app/common';
 
 import { CreateReservationDto, UpdateReservationDto } from './dto';
 import { FindReservationsDto } from './dto/find-reservations.dto';
@@ -15,6 +15,7 @@ export class ReservationsService {
     private readonly reservationsRepository: ReservationsRepository,
     private readonly redisService: RedisService,
     @Inject(PAYMENTS_SERVICE) private readonly paymentsService: ClientProxy,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(
@@ -164,14 +165,32 @@ export class ReservationsService {
     return reservation;
   }
 
-  async update(id: string, updateReservationDto: UpdateReservationDto): Promise<Reservation> {
+  async update(
+    id: string,
+    updateReservationDto: UpdateReservationDto,
+    additionalFilter: FilterQuery<Reservation> = {},
+    serviceToken?: string,
+  ): Promise<Reservation> {
+    if (serviceToken) {
+      const expectedToken = this.configService.get('INTER_SERVICE_SECRET');
+      if (!expectedToken || serviceToken !== expectedToken) {
+        throw new UnauthorizedException('Invalid service token');
+      }
+    }
+
     const reservation = await this.reservationsRepository.transaction(async (db: DatabaseService) => {
-      const existingReservation = await db.reservation.findUnique({
-        where: { id },
+      const whereClause = {
+        id,
+        ...additionalFilter,
+      };
+
+      const existingReservation = await db.reservation.findFirst({
+        where: whereClause,
       });
 
       if (!existingReservation) {
-        throw new NotFoundException('Reservation not found');
+        const filterDetails = JSON.stringify({ id, ...additionalFilter });
+        throw new NotFoundException(`Reservation not found with filter: ${filterDetails}`);
       }
 
       const { status, notes } = updateReservationDto;
@@ -184,7 +203,7 @@ export class ReservationsService {
         updateData.notes = notes;
 
       const reservation = await db.reservation.update({
-        where: { id },
+        where: { id: existingReservation.id },
         data: updateData,
       });
 
@@ -197,6 +216,23 @@ export class ReservationsService {
     }
 
     return reservation;
+  }
+
+  async updateWithEmailVerification(
+    id: string,
+    updateReservationDto: UpdateReservationDto,
+    email: string,
+    serviceToken?: string,
+  ): Promise<Reservation> {
+    const user = await this.reservationsRepository.transaction(async (db: DatabaseService) => {
+      return db.user.findUnique({ where: { email } });
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with email ${email} not found`);
+    }
+
+    return this.update(id, updateReservationDto, { userId: user.id }, serviceToken);
   }
 
   async cancel(id: string): Promise<Reservation> {
