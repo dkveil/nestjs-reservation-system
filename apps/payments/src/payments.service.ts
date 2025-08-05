@@ -39,6 +39,7 @@ export class PaymentsService {
       cancel_url,
       metadata: {
         email,
+        reservationId,
       },
     });
 

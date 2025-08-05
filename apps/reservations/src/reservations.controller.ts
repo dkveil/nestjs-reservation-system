@@ -1,5 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseFilters, UseGuards } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
+import { ReservationStatus } from '@prisma/client';
 
 import { CurrentUser, JwtAuthGuard, User, ZodFilter, ZodPipe } from '@app/common';
 
@@ -146,5 +148,12 @@ export class ReservationsController {
   @ApiResponse({ status: 404, description: 'Reservation not found' })
   async remove(@Param('id') id: string): Promise<void> {
     await this.reservationsService.remove(id);
+  }
+
+  @MessagePattern('update-reservation-status')
+  async updateReservationStatus(@Payload() data: { reservationId: string; status: string; email: string }) {
+    const { reservationId, status } = data;
+
+    return this.reservationsService.update(reservationId, { status: status as ReservationStatus });
   }
 }

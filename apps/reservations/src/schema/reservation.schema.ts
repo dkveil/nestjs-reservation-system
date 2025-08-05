@@ -25,6 +25,6 @@ export const CreateReservationSchema = z
   });
 
 export const UpdateReservationSchema = z.object({
-  status: z.enum(RESERVATION_CONSTANTS.STATUSES),
+  status: z.enum(RESERVATION_CONSTANTS.STATUSES).optional(),
   notes: z.string().optional(),
 }).partial();
