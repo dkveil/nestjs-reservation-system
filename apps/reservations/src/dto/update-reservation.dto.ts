@@ -8,6 +8,9 @@ export const UpdateReservationMessageSchema = z.object({
   status: z.nativeEnum(ReservationStatus),
   email: z.string(),
   serviceToken: z.string(),
+  timestamp: z.number(),
+  signature: z.string(),
+  service: z.string().optional(),
 });
 
 export type UpdateReservationDto = z.infer<typeof UpdateReservationSchema>;

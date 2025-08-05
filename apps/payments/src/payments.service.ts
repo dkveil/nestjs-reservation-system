@@ -82,15 +82,16 @@ export class PaymentsService {
           }
 
           try {
-            const serviceToken = this.configService.get('INTER_SERVICE_SECRET');
+            const payload = {
+              reservationId,
+              status: ReservationStatus.PENDING_APPROVAL,
+              email,
+            };
+
+            const signedMessage = this.configService.createSignedMessage(payload, 'payments');
 
             await firstValueFrom(
-              this.reservationsService.send('update-reservation-status', {
-                reservationId,
-                status: ReservationStatus.PENDING_APPROVAL,
-                email,
-                serviceToken,
-              }),
+              this.reservationsService.send('update-reservation-status', signedMessage),
             );
 
             this.logger.log(`Reservation ${reservationId} status updated to PENDING_APPROVAL`);
@@ -115,15 +116,16 @@ export class PaymentsService {
           }
 
           try {
-            const serviceToken = this.configService.get('INTER_SERVICE_SECRET');
+            const payload = {
+              reservationId,
+              status: ReservationStatus.CANCELED,
+              email,
+            };
+
+            const signedMessage = this.configService.createSignedMessage(payload, 'payments');
 
             await firstValueFrom(
-              this.reservationsService.send('update-reservation-status', {
-                reservationId,
-                status: ReservationStatus.CANCELED,
-                email,
-                serviceToken,
-              }),
+              this.reservationsService.send('update-reservation-status', signedMessage),
             );
 
             this.logger.log(`Reservation ${reservationId} status updated to CANCELED due to payment expiration`);

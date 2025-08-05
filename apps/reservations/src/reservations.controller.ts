@@ -3,7 +3,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { ReservationStatus } from '@prisma/client';
 
-import { CurrentUser, JwtAuthGuard, User, ZodFilter, ZodPipe } from '@app/common';
+import { CurrentUser, InterServiceGuard, JwtAuthGuard, User, ZodFilter, ZodPipe } from '@app/common';
 
 import { CreateReservationDto, CreateReservationDtoSwagger, ExtendedCreateReservationSchema } from './dto/create-reservation.dto';
 import { FindReservationsDto, FindReservationsDtoSwagger } from './dto/find-reservations.dto';
@@ -153,9 +153,14 @@ export class ReservationsController {
   }
 
   @MessagePattern('update-reservation-status')
+  @UseGuards(InterServiceGuard)
   async updateReservationStatus(@Payload() data: UpdateReservationMessageDto) {
-    const { reservationId, email, serviceToken } = data;
+    const { reservationId, email, status } = data;
 
-    return this.reservationsService.updateWithEmailVerification(reservationId, { status: ReservationStatus.CONFIRMED }, email, serviceToken);
+    return this.reservationsService.updateWithEmailVerification(
+      reservationId,
+      { status: status || ReservationStatus.PENDING_APPROVAL },
+      email,
+    );
   }
 }

@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 
@@ -169,15 +169,7 @@ export class ReservationsService {
     id: string,
     updateReservationDto: UpdateReservationDto,
     additionalFilter: FilterQuery<Reservation> = {},
-    serviceToken?: string,
   ): Promise<Reservation> {
-    if (serviceToken) {
-      const expectedToken = this.configService.get('INTER_SERVICE_SECRET');
-      if (!expectedToken || serviceToken !== expectedToken) {
-        throw new UnauthorizedException('Invalid service token');
-      }
-    }
-
     const reservation = await this.reservationsRepository.transaction(async (db: DatabaseService) => {
       const whereClause = {
         id,
@@ -222,7 +214,6 @@ export class ReservationsService {
     id: string,
     updateReservationDto: UpdateReservationDto,
     email: string,
-    serviceToken?: string,
   ): Promise<Reservation> {
     const user = await this.reservationsRepository.transaction(async (db: DatabaseService) => {
       return db.user.findUnique({ where: { email } });
@@ -232,7 +223,7 @@ export class ReservationsService {
       throw new NotFoundException(`User with email ${email} not found`);
     }
 
-    return this.update(id, updateReservationDto, { userId: user.id }, serviceToken);
+    return this.update(id, updateReservationDto, { userId: user.id });
   }
 
   async cancel(id: string): Promise<Reservation> {
