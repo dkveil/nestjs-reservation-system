@@ -27,6 +27,7 @@ services:
       - redis
       - auth
       - payments
+      - notifications
   auth:
     build:
       context: .
@@ -63,6 +64,33 @@ services:
     ports:
       - '${PAYMENTS_PORT}:${PAYMENTS_PORT}'
       - '${PAYMENTS_TCP_PORT}:${PAYMENTS_TCP_PORT}'
+    volumes:
+      - .:/usr/src/app
+    develop:
+      watch:
+        - path: ./apps/auth/src/**/*.ts
+          action: sync
+          target: /usr/src/app/apps/payments/src/
+        - path: ./libs/**/*.ts
+          action: sync
+          target: /usr/src/app/libs/
+        - path: ./package.json
+          action: rebuild
+        - path: ./pnpm-lock.yaml
+          action: rebuild
+    env_file:
+      - .env
+    depends_on:
+      - redis
+  notifications:
+    build:
+      context: .
+      dockerfile: ./apps/notifications/Dockerfile
+      target: development
+    command: pnpm run dev notifications
+    ports:
+      - '${NOTIFICATIONS_PORT}:${NOTIFICATIONS_PORT}'
+      - '${NOTIFICATIONS_TCP_PORT}:${NOTIFICATIONS_TCP_PORT}'
     volumes:
       - .:/usr/src/app
     develop:
