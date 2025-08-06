@@ -1,0 +1,7 @@
+services:
+  e2e:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./specs:/usr/src/app/specs
