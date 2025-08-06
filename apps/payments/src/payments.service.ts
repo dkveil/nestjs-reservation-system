@@ -5,7 +5,7 @@ import { Request, Response } from 'express';
 import { firstValueFrom } from 'rxjs';
 import Stripe from 'stripe';
 
-import { ConfigService, CreateChargeDto, RESERVATIONS_SERVICE } from '@app/common';
+import { ConfigService, CreateChargeDto, NOTIFICATIONS_SERVICE, RESERVATIONS_SERVICE } from '@app/common';
 
 @Injectable()
 export class PaymentsService {
@@ -14,6 +14,7 @@ export class PaymentsService {
   constructor(
     private readonly configService: ConfigService,
     @Inject(RESERVATIONS_SERVICE) private readonly reservationsService: ClientProxy,
+    @Inject(NOTIFICATIONS_SERVICE) private readonly notificationsService: ClientProxy,
   ) {}
 
   private readonly stripe = new Stripe(this.configService.get('STRIPE_SECRET_KEY')!, {
@@ -95,6 +96,11 @@ export class PaymentsService {
             );
 
             this.logger.log(`Reservation ${reservationId} status updated to PENDING_APPROVAL`);
+
+            this.notificationsService.emit('notify_email', {
+              email,
+              text: 'Your reservation has been confirmed',
+            });
           }
           catch (error) {
             this.logger.error(`Failed to update reservation status: ${error.message}`, error.stack);
@@ -129,6 +135,11 @@ export class PaymentsService {
             );
 
             this.logger.log(`Reservation ${reservationId} status updated to CANCELED due to payment expiration`);
+
+            this.notificationsService.emit('notify_email', {
+              email,
+              text: 'Your reservation has been canceled due to payment expiration',
+            });
           }
           catch (error) {
             this.logger.error(`Failed to update reservation status: ${error.message}`, error.stack);

@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Inject, Injectable, NotFoundExc
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 
-import { ConfigService, DatabaseService, FilterQuery, Pagination, PAYMENTS_SERVICE, RedisService } from '@app/common';
+import { DatabaseService, FilterQuery, NOTIFICATIONS_SERVICE, Pagination, PAYMENTS_SERVICE, RedisService } from '@app/common';
 
 import { CreateReservationDto, UpdateReservationDto } from './dto';
 import { FindReservationsDto } from './dto/find-reservations.dto';
@@ -15,7 +15,7 @@ export class ReservationsService {
     private readonly reservationsRepository: ReservationsRepository,
     private readonly redisService: RedisService,
     @Inject(PAYMENTS_SERVICE) private readonly paymentsService: ClientProxy,
-    private readonly configService: ConfigService,
+    @Inject(NOTIFICATIONS_SERVICE) private readonly notificationsService: ClientProxy,
   ) {}
 
   async create(
@@ -74,6 +74,11 @@ export class ReservationsService {
 
         await this.cacheReservation(reservation);
         await this.invalidateRelatedCache(placeId, startDate, endDate);
+
+        this.notificationsService.emit('notify_email', {
+          email: userData.email,
+          text: 'Your reservation has been created. Once payment is completed, it will be sent to the host for approval.',
+        });
 
         return { reservation, paymentUrl: paymentResult.url };
       }
@@ -221,6 +226,15 @@ export class ReservationsService {
 
     if (!user) {
       throw new NotFoundException(`User with email ${email} not found`);
+    }
+
+    switch (updateReservationDto.status) {
+      case ReservationStatus.PENDING_APPROVAL:
+        this.notificationsService.emit('notify_email', {
+          email,
+          text: 'Your reservation has been updated. Payment has been received and your reservation has been sent to the owner for confirmation. You will be notified when it is approved.',
+        });
+        break;
     }
 
     return this.update(id, updateReservationDto, { userId: user.id });
