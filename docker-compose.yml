@@ -28,6 +28,7 @@ services:
       - auth
       - payments
       - notifications
+      - rabbitmq
   auth:
     build:
       context: .
@@ -55,6 +56,7 @@ services:
       - .env
     depends_on:
       - redis
+      - rabbitmq
   payments:
     build:
       context: .
@@ -82,6 +84,7 @@ services:
       - .env
     depends_on:
       - redis
+      - rabbitmq
   notifications:
     build:
       context: .
@@ -109,6 +112,7 @@ services:
       - .env
     depends_on:
       - redis
+      - rabbitmq
   redis:
     image: redis:latest
     container_name: reservations-app-redis
@@ -119,6 +123,10 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     volumes:
       - redis-data:/data
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - '${RABBITMQ_PORT}:${RABBITMQ_PORT}'
 
 volumes:
   redis-data:

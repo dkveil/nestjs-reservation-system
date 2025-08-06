@@ -1,7 +1,8 @@
-import type { MicroserviceOptions } from '@nestjs/microservices';
+import type { RmqOptions } from '@nestjs/microservices';
 
 import { NestFactory } from '@nestjs/core';
 import { Transport } from '@nestjs/microservices';
+import { RmqUrl } from '@nestjs/microservices/external/rmq-url.interface';
 import * as cookieParser from 'cookie-parser';
 
 import { ConfigService, ZodFilter } from '@app/common';
@@ -15,11 +16,12 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.TCP,
+  app.connectMicroservice<RmqOptions>({
+    transport: Transport.RMQ,
     options: {
-      host: '0.0.0.0',
-      port: Number(configService.get('PAYMENTS_TCP_PORT', 3002)),
+      urls: [configService.get('RABBITMQ_URL') as RmqUrl],
+      noAck: false,
+      queue: 'payments',
     },
   });
 

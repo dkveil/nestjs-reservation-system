@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { RmqUrl } from '@nestjs/microservices/external/rmq-url.interface';
 
 import { AUTH_SERVICE, ConfigService, DatabaseModule, NOTIFICATIONS_SERVICE, PAYMENTS_SERVICE, RedisModule } from '@app/common';
 
@@ -15,10 +16,10 @@ import { ReservationsService } from './reservations.service';
       {
         name: AUTH_SERVICE,
         useFactory: (configService: ConfigService) => ({
-          transport: Transport.TCP,
+          transport: Transport.RMQ,
           options: {
-            host: configService.get('AUTH_TCP_HOST', 'auth'),
-            port: Number(configService.get('AUTH_TCP_PORT', 3158)),
+            urls: [configService.get('RABBITMQ_URL') as RmqUrl],
+            queue: 'auth',
           },
         }),
         inject: [ConfigService],
@@ -26,10 +27,10 @@ import { ReservationsService } from './reservations.service';
       {
         name: PAYMENTS_SERVICE,
         useFactory: (configService: ConfigService) => ({
-          transport: Transport.TCP,
+          transport: Transport.RMQ,
           options: {
-            host: configService.get('PAYMENTS_HOST', 'payments'),
-            port: Number(configService.get('PAYMENTS_TCP_PORT', 3002)),
+            urls: [configService.get('RABBITMQ_URL') as RmqUrl],
+            queue: 'payments',
           },
         }),
         inject: [ConfigService],
@@ -37,10 +38,10 @@ import { ReservationsService } from './reservations.service';
       {
         name: NOTIFICATIONS_SERVICE,
         useFactory: (configService: ConfigService) => ({
-          transport: Transport.TCP,
+          transport: Transport.RMQ,
           options: {
-            host: configService.get('NOTIFICATIONS_HOST', 'notifications'),
-            port: Number(configService.get('NOTIFICATIONS_TCP_PORT', 3003)),
+            urls: [configService.get('RABBITMQ_URL') as RmqUrl],
+            queue: 'notifications',
           },
         }),
         inject: [ConfigService],

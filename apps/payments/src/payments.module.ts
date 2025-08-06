@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { RmqUrl } from '@nestjs/microservices/external/rmq-url.interface';
 
 import { ConfigModule, ConfigService, NOTIFICATIONS_SERVICE, RESERVATIONS_SERVICE } from '@app/common';
 
@@ -13,10 +14,10 @@ import { PaymentsService } from './payments.service';
       {
         name: RESERVATIONS_SERVICE,
         useFactory: (configService: ConfigService) => ({
-          transport: Transport.TCP,
+          transport: Transport.RMQ,
           options: {
-            host: configService.get('RESERVATIONS_HOST', 'reservations'),
-            port: Number(configService.get('RESERVATIONS_TCP_PORT', 3003)),
+            urls: [configService.get('RABBITMQ_URL') as RmqUrl],
+            queue: 'reservations',
           },
         }),
         inject: [ConfigService],
@@ -24,10 +25,10 @@ import { PaymentsService } from './payments.service';
       {
         name: NOTIFICATIONS_SERVICE,
         useFactory: (configService: ConfigService) => ({
-          transport: Transport.TCP,
+          transport: Transport.RMQ,
           options: {
-            host: configService.get('NOTIFICATIONS_HOST', 'notifications'),
-            port: Number(configService.get('NOTIFICATIONS_TCP_PORT', 3002)),
+            urls: [configService.get('RABBITMQ_URL') as RmqUrl],
+            queue: 'notifications',
           },
         }),
         inject: [ConfigService],
